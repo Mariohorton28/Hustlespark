@@ -1,125 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import { useBranding } from '../theme/branding';
-import { todayId } from '../lib/date';
-import { upsertPlan } from '../lib/planStore';
+import { View, Text, Button, ScrollView, ActivityIndicator } from 'react-native';
+import { getProfile, savePlan, Plan } from '../lib/storage';
+import { todayISO } from '../lib/date';
 
-type Profile = { niche: string; pillars: string[]; voice: string };
-const PROFILE_KEY = 'hs:profile';
+function genLocal(niche:string, pillars:string[], voice:string){
+  const hooks = [
+    `Stop scrolling if you care about ${niche}`,
+    `Fastest way to level up your ${niche} game`,
+    `${niche} myth that wastes time`,
+  ];
+  const script = `Quick ${niche} win. Focus on ${pillars[0]||'one simple step'}. Keep it simple. Take action today. (Voice: ${voice})`;
+  const caption = `Try this ${niche} tip today. Save this!`;
+  const hashtags = ['#' + niche.replace(/\W+/g,'').toLowerCase(), '#howto', '#tips', '#growth', '#sidehustle'];
+  return { hooks, script, caption, hashtags };
+}
 
-export default function HomeScreen() {
-  const nav = useNavigation();
-  const { brand } = useBranding();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [saving, setSaving] = useState(false);
+export default function HomeScreen(){
+  const [loading,setLoading]=useState(true);
+  const [plan,setPlan]=useState<Plan|null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(PROFILE_KEY);
-        if (raw) setProfile(JSON.parse(raw));
-      } catch {}
-    })();
-  }, []);
+  useEffect(()=>{(async()=>{
+    const prof = await getProfile();
+    const niche = prof?.niche || 'AI side hustles';
+    const pillars = prof?.pillars || ['Automation','Prompting','Monetization'];
+    const voice = prof?.voice || 'friendly';
+    const gen = genLocal(niche,pillars,voice);
+    const doc: Plan = { id: todayISO(), date: todayISO(), prompt:`3 ${niche} tips for today`, status:'pending', ...gen };
+    setPlan(doc); setLoading(false);
+  })();},[]);
 
-  async function quickSave() {
-    setSaving(true);
-    const idBase = todayId();
-    await upsertPlan({
-      id: `${idBase}-quick-${Date.now()}`,
-      date: idBase,
-      prompt: `Daily plan for ${profile?.niche || 'your niche'}`,
-      hooks: [
-        `A quick win for ${profile?.niche || 'your niche'}`,
-        `Stop doing this in ${profile?.niche || 'your niche'}`,
-      ],
-      caption: `Daily push for ${profile?.niche || 'your niche'}`,
-      hashtags: ['#daily', '#content', '#planner'],
-      status: 'pending',
-    });
-    setSaving(false);
+  async function addToPlanner(){
+    if(!plan) return;
+    await savePlan(plan);
+    alert('Saved to Planner');
   }
 
+  if(loading) return <View style={{flex:1,alignItems:'center',justifyContent:'center'}}><ActivityIndicator/></View>;
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#F8FAFC' }} contentContainerStyle={s.wrap}>
-      {/* Profile banner */}
-      <View style={s.card}>
-        <View style={s.headerRow}>
-          <Text style={s.title}>Your Profile</Text>
-          <TouchableOpacity onPress={() => nav.navigate('Settings' as never)}>
-            <Text style={[s.link, { color: brand.primary }]}>Edit Profile</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={s.row}>
-          <View style={[s.pill, { backgroundColor: '#EEF2FF' }]}>
-            <Text style={[s.pillText, { color: '#3730A3' }]}>
-              Niche: <Text style={s.bold}>{profile?.niche || '—'}</Text>
-            </Text>
-          </View>
-          <View style={[s.pill, { backgroundColor: '#EDE9FE' }]}>
-            <Text style={[s.pillText, { color: '#6D28D9' }]}>
-              Voice: <Text style={s.bold}>{profile?.voice || '—'}</Text>
-            </Text>
-          </View>
-        </View>
-
-        {profile?.pillars?.length ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, marginTop: 8 }}>
-            {profile.pillars.map((p, i) => (
-              <View key={i} style={s.chip}>
-                <Text style={s.chipText}>{p}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        ) : null}
-      </View>
-
-      {/* Quick actions */}
-      <View style={s.row}>
-        <TouchableOpacity style={[s.action, { borderColor: brand.primary }]}>
-          <Text style={s.actionTitle}>Idea Starter</Text>
-          <Text style={s.muted}>3 hooks for today</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[s.action, { borderColor: '#22C55E' }]}>
-          <Text style={s.actionTitle}>Checklist</Text>
-          <Text style={s.muted}>Prep → Record → Post</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={[s.btnPrimary, { backgroundColor: brand.primary }]} onPress={quickSave} disabled={saving}>
-        <Text style={s.btnText}>{saving ? 'Saving…' : 'Save to Planner (Today)'}</Text>
-      </TouchableOpacity>
+    <ScrollView contentContainerStyle={{padding:16, gap:12}}>
+      <Text style={{fontSize:22,fontWeight:'700'}}>Today</Text>
+      <Text style={{fontWeight:'600'}}>Prompt</Text><Text>{plan?.prompt}</Text>
+      <Text style={{fontWeight:'600'}}>Hooks</Text>{plan?.hooks.map((h,i)=><Text key={i}>• {h}</Text>)}
+      <Text style={{fontWeight:'600'}}>Script</Text><Text>{plan?.script}</Text>
+      <Text style={{fontWeight:'600'}}>Caption</Text><Text>{plan?.caption}</Text>
+      <Text style={{fontWeight:'600'}}>Hashtags</Text><Text>{plan?.hashtags.join(' ')}</Text>
+      <Button title="Add to Planner" onPress={addToPlanner}/>
     </ScrollView>
   );
 }
-
-const s = StyleSheet.create({
-  wrap: { padding: 16, gap: 12 },
-  card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: '#E5E7EB',
-    shadowColor: '#0F172A', shadowOpacity: 0.06, shadowRadius: 12, shadowOffset: { width: 0, height: 6 },
-  },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  link: { fontWeight: '800' },
-
-  title: { fontWeight: '800', color: '#0F172A' },
-  row: { flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap' },
-
-  pill: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999 },
-  pillText: { fontWeight: '700' },
-  bold: { fontWeight: '900', color: '#0F172A' },
-
-  chip: { backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
-  chipText: { color: '#3730A3', fontWeight: '700', fontSize: 12 },
-
-  action: { flex: 1, backgroundColor: '#fff', borderWidth: 2, borderRadius: 14, padding: 16 },
-  actionTitle: { fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  muted: { color: '#64748B' },
-
-  btnPrimary: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnText: { color: '#fff', fontWeight: '800' },
-});
