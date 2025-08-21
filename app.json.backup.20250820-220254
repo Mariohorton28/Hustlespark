@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "hustlespark",
+    "slug": "hustlespark",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "https://i.imgur.com/PkgyaIc.png",
+    "splash": {
+      "image": "https://i.imgur.com/PkgyaIc.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#7C3AED"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "hustlespark"
+      }
+    }
+  }
+}

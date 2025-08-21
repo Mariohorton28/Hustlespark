@@ -1,10 +1,18 @@
+
+  "expo": {
+    "name": "hustlespark",
+    "slug": "hustlespark",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "https://i.imgur.com/PkgyaIc.png",
+    "splash": {
 {
   "expo": {
     "name": "hustlespark",
     "slug": "hustlespark",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "https://i.imgur.com/PkgyaIc.png",
     "splash": {
       "image": "https://i.imgur.com/PkgyaIc.png",
       "resizeMode": "contain",
@@ -18,26 +26,22 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mariohorton.hustlespark",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "bundleIdentifier": "com.mariohorton.hustlespark"
     },
     "android": {
-      "package": "com.mariohorton.hustlespark",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "https://i.imgur.com/PkgyaIc.png",
         "backgroundColor": "#7C3AED"
-      }
+      },
+      "package": "com.mariohorton.hustlespark"
     },
     "web": {
       "favicon": "https://i.imgur.com/PkgyaIc.png"
     },
     "extra": {
       "eas": {
-        "projectId": "f0c51233-19e3-4d50-a73e-724142593eee"
+        "projectId": "hustlespark"
       }
-    },
-    "owner": "mariohorton28"
+    }
   }
 }
